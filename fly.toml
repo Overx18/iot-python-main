@@ -1,0 +1,21 @@
+app = "nombre-de-tu-app"  # Puedes cambiarlo si quieres
+
+primary_region = "mia"  # usa "iad", "sjc", "fra", etc., según tu ubicación preferida
+
+[build]
+  image = "tiangolo/uvicorn-gunicorn-fastapi:python3.11"  # imagen oficial para FastAPI
+
+[env]
+  PORT = "8080"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443

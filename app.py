@@ -1,100 +1,89 @@
-# app.py
-from flask import Flask, request, jsonify
-import base64
-from pymongo import MongoClient
-from google.cloud import vision
+import re
 import os
-from datetime import datetime # Asegúrate de importar datetime
+from flask import Flask, request, jsonify
+from google.cloud import vision
+from google.oauth2 import service_account
+from datetime import datetime
+from dotenv import load_dotenv
+from pymongo import MongoClient
 
 app = Flask(__name__)
+load_dotenv()
 
-# --- Configuración ---
-# Reemplaza con tu cadena de conexión de MongoDB Atlas
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://<user>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority")
-# Reemplaza con el ID de tu proyecto de Google Cloud
-# Reemplaza con el ID de tu proyecto de Google Cloud
-# GOOGLE_CLOUD_PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT_ID", "your-gcp-project-id")
-# Configura las credenciales de Google Cloud si no se ejecuta en un entorno con cuenta de servicio
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ruta/a/tu/clave-de-cuenta-de-servicio.json"
+# --- Configuración Google Cloud y API Vision AI ---
+cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+credentials = service_account.Credentials.from_service_account_file(cred_path)
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
-# --- Inicializar Clientes ---
+# --- Conexcion MongoDB ---
+MONGO_URI = os.environ.get("MONGO_URI")
 try:
     mongo_client = MongoClient(MONGO_URI)
-    db = mongo_client["falta"] # O especifica tu base de datos: db = mongo_client["nombre_de_tu_base_de_datos"]
+    db = mongo_client["iot-db"] # Especifica la base de datos
     print("¡Conectado a MongoDB Atlas con éxito!")
 except Exception as e:
     print(f"Error al conectar a MongoDB Atlas: {e}")
     # Maneja el error apropiadamente, quizás sal o lanza una excepción
-    # exit()
 
-vision_client = vision.ImageAnnotatorClient()
+# --- Colecciones ---
+plates_collection = db["plates_data"]  # Para placas de vehículos
+sensors_collection = db["sensors_data"]  # Para datos de sensores
 
-@app.route('/data_ingestion', methods=['POST'])
-def data_ingestion():
+#Funcion para extraer el formato de la placa de todo el texto encontrado en la imagen
+def extract_plate(text):
+    """
+    Extrae placas con formato: 3 caracteres (letras/números) + guión + 3 caracteres (letras/números).
+    Ejemplos válidos: VUS-123, ABC-1A2, 1B3-45C
+    """
+    plate_pattern = re.compile(
+        r'\b[A-Z0-9]{3}-[A-Z0-9]{3}\b',  # Formato: XXX-XXX (letras/números)
+        re.IGNORECASE
+    )
+    matches = plate_pattern.findall(text.upper().replace(" ", ""))
+    return matches[0] if matches else None
+
+@app.route('/api/plates', methods=['POST'])
+def procesar_plates():
     try:
-        data = request.get_json()
+        if request.content_type != "image/jpeg":
+            return jsonify({"status": "error", "message": "Solo se acepta Content-Type: image/jpeg"}), 415
 
-        if not data:
-            return jsonify({"status": "error", "message": "No se recibieron datos JSON"}), 400
-
-        # Extraer datos de la petición
-        sensor_data = data.get('sensors')
-        gps_data = data.get('gps')
-        base64_image = data.get('image') # Asumiendo que la imagen se envía con la clave 'image'
-
+        # Leer imagen JPEG cruda desde el body
+        image_bytes = request.data
+        # Procesar imagen con Vision AI
+        image = vision.Image(content=image_bytes)
+        response = vision_client.text_detection(image=image)
+        texts = response.text_annotations
         recognized_plate = None
+        # Extraer placa
+        if texts:
+            recognized_plate = extract_plate(texts[0].description)
 
-        if base64_image:
-            try:
-                # Decodificar la imagen Base64
-                image_bytes = base64.b64decode(base64_image)
+        if response.error.message:
+            print(f"Error de Vision AI: {response.error.message}")
 
-                # Preparar imagen para Vision AI
-                image = vision.Image(content=image_bytes)
+        # Guardar en MongoDB
+        if recognized_plate:
+            plate_data = {
+                "plate": recognized_plate,
+                "timestamp": datetime.now(),
+                "source": "camera"
+            }
+            plates_collection.insert_one(plate_data)
 
-                # Realizar detección de texto (OCR)
-                response = vision_client.text_detection(image=image)
-                texts = response.text_annotations
-
-                if texts:
-                    # La primera anotación de texto suele ser el texto completo detectado
-                    full_text = texts[0].description
-                    # Aquí podrías necesitar un análisis más sofisticado para extraer específicamente la matrícula
-                    # Para simplificar, asumiremos que el primer texto reconocido es la matrícula o la contiene
-                    recognized_plate = full_text.split('\n')[0] # Tomando la primera línea como posible matrícula
-
-                if response.error.message:
-                    print(f"Error de Vision AI: {response.error.message}")
-                    # Opcionalmente registra este error
-            except Exception as e:
-                print(f"Error al procesar la imagen con Vision AI: {e}")
-                # Continuar con la ingesta de datos incluso si el procesamiento de la imagen falla
-        else:
-            print("No se recibió imagen Base64.")
-
-        # Preparar datos para MongoDB
-        record = {
-            "timestamp": datetime.now(),
-            "sensors": sensor_data,
-            "gps": gps_data,
+        return jsonify({
+            "status": "success",
             "recognized_plate": recognized_plate,
-            # Podrías querer almacenar la imagen Base64 en la DB si es necesario, pero considera los límites de tamaño
-            # "base64_image": base64_image # Descomenta si quieres almacenarla
-        }
-
-        # Insertar en MongoDB
-        collection_name = os.environ.get("MONGO_COLLECTION", "falta")
-        db[collection_name].insert_one(record)
-
-        return jsonify({"status": "success", "message": "Datos ingeridos con éxito", "recognized_plate": recognized_plate}), 200
+            "timestamp": datetime.now().isoformat()
+        }), 200
 
     except Exception as e:
-        print(f"Ocurrió un error: {e}")
+        print(f"Error al procesar imagen: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/', methods=['GET'])
-def hello_world():
-    return "Hello, World!", 200
+def hello():
+    return "API de OCR para placas activada y recibir datos de los sensores", 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

@@ -1,6 +1,3 @@
-fastapi
-uvicorn
-easyocr
-opencv-python-headless
-numpy
-python-multipart
+Flask
+pymongo
+google-cloud-vision

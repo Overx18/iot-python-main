@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import base64
 from pymongo import MongoClient
 from google.cloud import vision
+from google.oauth2 import service_account
 import os
 from datetime import datetime # Asegúrate de importar datetime
 
@@ -12,22 +13,21 @@ app = Flask(__name__)
 # Reemplaza con tu cadena de conexión de MongoDB Atlas
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://<user>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority")
 # Reemplaza con el ID de tu proyecto de Google Cloud
-GOOGLE_CLOUD_PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT_ID", "your-gcp-project-id")
-# Configura las credenciales de Google Cloud si no se ejecuta en un entorno con cuenta de servicio
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ruta/a/tu/clave-de-cuenta-de-servicio.json"
-
+credentials = service_account.Credentials.from_service_account_file(
+    'proyecto-iot-462403-3c411bc2b93d.json'
+)
 
 # --- Inicializar Clientes ---
 try:
     mongo_client = MongoClient(MONGO_URI)
-    db = mongo_client["nombre_de_tu_base_de_datos"] # O especifica tu base de datos: db = mongo_client["nombre_de_tu_base_de_datos"]
+    db = mongo_client["falta"] # O especifica tu base de datos: db = mongo_client["nombre_de_tu_base_de_datos"]
     print("¡Conectado a MongoDB Atlas con éxito!")
 except Exception as e:
     print(f"Error al conectar a MongoDB Atlas: {e}")
     # Maneja el error apropiadamente, quizás sal o lanza una excepción
-    exit()
+    # exit()
 
-vision_client = vision.ImageAnnotatorClient()
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
 @app.route('/data_ingestion', methods=['POST'])
 def data_ingestion():
@@ -83,7 +83,7 @@ def data_ingestion():
         }
 
         # Insertar en MongoDB
-        collection_name = os.environ.get("MONGO_COLLECTION", "iot_data")
+        collection_name = os.environ.get("MONGO_COLLECTION", "falta")
         db[collection_name].insert_one(record)
 
         return jsonify({"status": "success", "message": "Datos ingeridos con éxito", "recognized_plate": recognized_plate}), 200
@@ -91,6 +91,10 @@ def data_ingestion():
     except Exception as e:
         print(f"Ocurrió un error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/', methods=['GET'])
+def hello_world():
+    return "Hello, World!", 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

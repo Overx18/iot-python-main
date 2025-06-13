@@ -42,6 +42,7 @@ def extract_plate(text):
     matches = plate_pattern.findall(text.upper().replace(" ", ""))
     return matches[0] if matches else None
 
+# --- Endpoint 1: Procesamiento de imágenes (placas) ---
 @app.route('/api/plates', methods=['POST'])
 def procesar_plates():
     try:
@@ -81,6 +82,36 @@ def procesar_plates():
         print(f"Error al procesar imagen: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# --- Endpoint 2: Datos de sensores (gas, GPS, etc.) ---
+@app.route('/api/sensors', methods=['POST'])
+def process_sensors():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "Datos JSON requeridos"}), 400
+
+        # Validar campos obligatorios
+        required_fields = ["gas1", "gas2", "gas3", "latitude", "longitude"]
+        if not all(field in data for field in required_fields):
+            return jsonify({"status": "error", "message": "Faltan campos requeridos"}), 400
+
+        # Guardar en MongoDB
+        sensor_data = {
+            **data,
+            "timestamp": datetime.now()
+        }
+        sensors_collection.insert_one(sensor_data)
+
+        return jsonify({
+            "status": "success",
+            "message": "Datos de sensores guardados",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+# --- Endpoint de prueba ---
 @app.route('/', methods=['GET'])
 def hello():
     return "API de OCR para placas activada y recibir datos de los sensores", 200

@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 import base64
 from pymongo import MongoClient
 from google.cloud import vision
-from google.oauth2 import service_account
 import os
 from datetime import datetime # Asegúrate de importar datetime
 
@@ -13,9 +12,10 @@ app = Flask(__name__)
 # Reemplaza con tu cadena de conexión de MongoDB Atlas
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://<user>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority")
 # Reemplaza con el ID de tu proyecto de Google Cloud
-credentials = service_account.Credentials.from_service_account_file(
-    'proyecto-iot-462403-3c411bc2b93d.json'
-)
+# Reemplaza con el ID de tu proyecto de Google Cloud
+# GOOGLE_CLOUD_PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT_ID", "your-gcp-project-id")
+# Configura las credenciales de Google Cloud si no se ejecuta en un entorno con cuenta de servicio
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ruta/a/tu/clave-de-cuenta-de-servicio.json"
 
 # --- Inicializar Clientes ---
 try:
@@ -27,7 +27,7 @@ except Exception as e:
     # Maneja el error apropiadamente, quizás sal o lanza una excepción
     # exit()
 
-vision_client = vision.ImageAnnotatorClient(credentials=credentials)
+vision_client = vision.ImageAnnotatorClient()
 
 @app.route('/data_ingestion', methods=['POST'])
 def data_ingestion():

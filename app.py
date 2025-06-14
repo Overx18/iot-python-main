@@ -44,8 +44,6 @@ db = None
 try:
     mongo_client = MongoClient(app.config["MONGO_URI"])
     db = mongo_client["iot-db"]  # Especifica el nombre de la base de datos
-    # El comando ismaster es una forma basica de verificar la conexión.
-    mongo_client.admin.command('ismaster')
     print("¡Conectado a MongoDB Atlas con éxito!")
 except ConnectionFailure as e:
     print(f"Error al conectar a MongoDB Atlas: {e}")

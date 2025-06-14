@@ -11,18 +11,11 @@ from pymongo.errors import ConnectionFailure
 # --- Carga de Configuración ---
 load_dotenv() # Carga las variables de entorno desde el archivo .env
 
-class Config:
-    """
-    Clase de configuración para cargar variables de entorno.
-    """
-    MONGO_URI = os.environ.get("MONGO_URI")
     # Si se usa el archivo de credenciales de Google Cloud, se descomenta la siguientes línea:
     # GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    # PORT = int(os.environ.get("PORT", 8080))
 
 # --- Inicialización de la Aplicación Flask ---
 app = Flask(__name__)
-app.config.from_object(Config) # Carga la configuración desde la clase Config
 
 # --- Inicialización del Cliente de Google Cloud Vision AI ---
 vision_client = None
@@ -39,17 +32,18 @@ except Exception as e:
     # Considera si la aplicación debe detenerse si no puede inicializar el cliente de Vision AI.
 
 # --- Conexión a MongoDB ---
-mongo_client = None
 db = None
+
+MONGO_URI = os.environ.get("MONGO_URI")
+
 try:
-    mongo_client = MongoClient(app.config["MONGO_URI"])
-    db = mongo_client["iot-db"]  # Especifica el nombre de la base de datos
+    mongo_client = MongoClient(MONGO_URI)
+    db = mongo_client["iot-db"] # Especifica la base de datos
+
+
     print("¡Conectado a MongoDB Atlas con éxito!")
-except ConnectionFailure as e:
-    print(f"Error al conectar a MongoDB Atlas: {e}")
-    # Maneja el error apropiadamente, quizás lanza una excepción.
 except Exception as e:
-    print(f"Ocurrió un error inesperado durante la conexión a MongoDB: {e}")
+    print(f"Error al conectar a MongoDB Atlas: {e}")
 
 # --- Colecciones de MongoDB ---
 # Asegúrarse de que db no sea None antes de intentar acceder a las colecciones

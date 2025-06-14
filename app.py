@@ -177,7 +177,5 @@ def hello():
 
 # --- Ejecución principal de la alicación ---
 if __name__ == '__main__':
-    print("Iniciando app Flask...")
-    print(f"Puerto: {app.config['PORT']}")
-    app.run(host='0.0.0.0', port=app.config["PORT"])
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
 

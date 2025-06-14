@@ -3,4 +3,3 @@ google-cloud-vision
 google-auth
 python-dotenv
 pymongo
-gunicorn

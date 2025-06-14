@@ -18,7 +18,7 @@ class Config:
     MONGO_URI = os.environ.get("MONGO_URI")
     # Si se usa el archivo de credenciales de Google Cloud, se descomenta la siguientes línea:
     # GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    PORT = int(os.environ.get("PORT", 8080))
+    # PORT = int(os.environ.get("PORT", 8080))
 
 # --- Inicialización de la Aplicación Flask ---
 app = Flask(__name__)

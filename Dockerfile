@@ -24,4 +24,4 @@ EXPOSE $PORT
 
 # El comando que se ejecuta cuando el contenedor se inicia.
 # Aquí le decimos que ejecute tu script 'app.py'.
-CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"]

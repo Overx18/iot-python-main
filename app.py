@@ -18,6 +18,7 @@ class Config:
     MONGO_URI = os.environ.get("MONGO_URI")
     # Si se usa el archivo de credenciales de Google Cloud, se descomenta la siguientes línea:
     # GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    PORT = int(os.environ.get("PORT", 8080))
     # Convierte la variable FLASK_DEBUG a booleano de forma segura
     DEBUG = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
 

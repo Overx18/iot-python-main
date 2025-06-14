@@ -19,8 +19,6 @@ class Config:
     # Si se usa el archivo de credenciales de Google Cloud, se descomenta la siguientes línea:
     # GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     PORT = int(os.environ.get("PORT", 8080))
-    # Convierte la variable FLASK_DEBUG a booleano de forma segura
-    DEBUG = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
 
 # --- Inicialización de la Aplicación Flask ---
 app = Flask(__name__)
@@ -181,5 +179,7 @@ def hello():
 
 # --- Ejecución principal de la alicación ---
 if __name__ == '__main__':
-    # Ejecuta la aplicación en modo debug si app.config["DEBUG"] es True
-    app.run(debug=app.config["DEBUG"], host='0.0.0.0', port=app.config["PORT"])
+    print("Iniciando app Flask...")
+    print(f"Puerto: {app.config['PORT']}")
+    app.run(host='0.0.0.0', port=app.config["PORT"])
+

@@ -11,9 +11,9 @@ app = Flask(__name__)
 load_dotenv()
 
 # --- Configuración Google Cloud y API Vision AI ---
-cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-credentials = service_account.Credentials.from_service_account_file(cred_path)
-vision_client = vision.ImageAnnotatorClient(credentials=credentials)#)
+# cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+# credentials = service_account.Credentials.from_service_account_file(cred_path)
+vision_client = vision.ImageAnnotatorClient()#)
 
 # --- Conexcion MongoDB ---
 MONGO_URI = os.environ.get("MONGO_URI")

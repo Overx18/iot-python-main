@@ -11,9 +11,9 @@ app = Flask(__name__)
 load_dotenv()
 
 # --- Configuración Google Cloud y API Vision AI ---
-#cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-#credentials = service_account.Credentials.from_service_account_file(cred_path)
-vision_client = vision.ImageAnnotatorClient()#credentials=credentials)
+cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+credentials = service_account.Credentials.from_service_account_file(cred_path)
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)#)
 
 # --- Conexcion MongoDB ---
 MONGO_URI = os.environ.get("MONGO_URI")
@@ -97,9 +97,9 @@ def process_sensors():
             return jsonify({"status": "error", "message": "Datos JSON requeridos"}), 400
 
         # Validar campos obligatorios
-        required_fields = ["gas1", "gas2", "gas3", "latitude", "longitude"]
-        if not all(field in data for field in required_fields):
-            return jsonify({"status": "error", "message": "Faltan campos requeridos"}), 400
+        #required_fields = ["gas1", "gas2", "gas3", "latitude", "longitude"]
+        #if not all(field in data for field in required_fields):
+        #    return jsonify({"status": "error", "message": "Faltan campos requeridos"}), 400
 
         # Guardar en MongoDB
         sensor_data = {
@@ -117,7 +117,18 @@ def process_sensors():
     except Exception as e:
 
         return jsonify({"status": "error", "message": str(e)}), 500
-    
+
+# Get endpoints para obtener datos de placas y sensores
+@app.route('/api/plates', methods=['GET'])
+def get_plates():
+    plates = list(plates_collection.find({}, {'_id': 0}))
+    return jsonify({"status": "success", "plates": plates}), 200
+
+@app.route('/api/sensors', methods=['GET'])
+def get_sensors():
+    sensors = list(sensors_collection.find({}, {'_id': 0}))
+    return jsonify({"status": "success", "sensors": sensors}), 200
+
 # --- Endpoint de prueba ---
 @app.route('/', methods=['GET'])
 def hello():

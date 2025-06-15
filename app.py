@@ -6,6 +6,7 @@ from google.oauth2 import service_account
 from datetime import datetime
 from dotenv import load_dotenv
 from pymongo import MongoClient
+import uuid
 
 app = Flask(__name__)
 load_dotenv()
@@ -17,6 +18,10 @@ vision_client = vision.ImageAnnotatorClient()#)
 
 # --- Conexcion MongoDB ---
 MONGO_URI = os.environ.get("MONGO_URI")
+
+# --- UPLOAD FOLDER ---
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 try:
     mongo_client = MongoClient(MONGO_URI)
@@ -55,6 +60,15 @@ def procesar_plates():
 
         # Leer imagen JPEG cruda desde el body
         image_bytes = request.data
+
+        # Generate unique filename
+        filename = f"{uuid.uuid4().hex}.jpg"
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+        # Save image to disk
+        with open(file_path, 'wb') as f:
+            f.write(image_bytes)
+
         # Procesar imagen con Vision AI
         image = vision.Image(content=image_bytes)
         response = vision_client.text_detection(image=image)
@@ -63,7 +77,6 @@ def procesar_plates():
         recognized_plate = None
         # Extraer placa
         if texts:
-
             recognized_plate = extract_plate(texts[0].description)
 
         if response.error.message:
@@ -74,14 +87,16 @@ def procesar_plates():
             plate_data = {
                 "plate": recognized_plate,
                 "timestamp": datetime.now(),
-                "source": "camera"
+                "source": "camera",
+                "image_path": file_path
             }
             plates_collection.insert_one(plate_data)
 
         return jsonify({
             "status": "success",
             "recognized_plate": recognized_plate,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "image_path": file_path
         }), 200
 
     except Exception as e:

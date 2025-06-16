@@ -66,8 +66,8 @@ def procesar_plates():
         file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         # Save image to disk
-        #with open(file_path, 'wb') as f:
-        #    f.write(image_bytes)
+        with open(file_path, 'wb') as f:
+            f.write(image_bytes)
 
         # Procesar imagen con Vision AI
         image = vision.Image(content=image_bytes)

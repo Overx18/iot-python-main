@@ -7,8 +7,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import uuid
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 load_dotenv()
 
 # --- Configuración Google Cloud y API Vision AI ---

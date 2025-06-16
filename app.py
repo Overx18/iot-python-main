@@ -66,8 +66,8 @@ def procesar_plates():
         file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         # Save image to disk
-        with open(file_path, 'wb') as f:
-            f.write(image_bytes)
+        #with open(file_path, 'wb') as f:
+        #    f.write(image_bytes)
 
         # Procesar imagen con Vision AI
         image = vision.Image(content=image_bytes)
@@ -83,14 +83,14 @@ def procesar_plates():
             print(f"Error de Vision AI: {response.error.message}")
 
         # Guardar en MongoDB
-        if recognized_plate:
-            plate_data = {
-                "plate": recognized_plate,
-                "timestamp": datetime.now(),
-                "source": "camera",
-                "image_path": file_path
-            }
-            plates_collection.insert_one(plate_data)
+        #if recognized_plate:
+        plate_data = {
+            "plate": recognized_plate,
+            "timestamp": datetime.now(),
+            "source": "camera",
+            "image_path": file_path
+        }
+        plates_collection.insert_one(plate_data)
 
         return jsonify({
             "status": "success",

@@ -63,16 +63,27 @@ def procesar_plates():
         # Leer imagen JPEG cruda desde el body
         image_bytes = request.data
 
+        # Convertir los bytes en una imagen con Pillow
+        image = Image.open(io.BytesIO(image_bytes))
+
+        # Crear el efecto espejo (flip horizontal)
+        mirrored_image = image.transpose(Image.FLIP_LEFT_RIGHT)
+
+        # Convertir la imagen de vuelta a bytes
+        img_byte_arr = io.BytesIO()
+        mirrored_image.save(img_byte_arr, format='JPEG')
+        mirrored_image_bytes = img_byte_arr.getvalue()
+
         # Generate unique filename
         filename = f"{uuid.uuid4().hex}.jpg"
         file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         # Save image to disk
         with open(file_path, 'wb') as f:
-            f.write(image_bytes)
+            f.write(mirrored_image_bytes)
 
         # Procesar imagen con Vision AI
-        image = vision.Image(content=image_bytes)
+        image = vision.Image(content=mirrored_image_bytes)
         response = vision_client.text_detection(image=image)
         texts = response.text_annotations
 

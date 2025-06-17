@@ -89,7 +89,7 @@ def procesar_plates():
         plate_data = {
             "plate": recognized_plate,
             "timestamp": datetime.now(),
-            "source": "camera",
+            "source": "ESP32-CAM",
             "image_path": file_path
         }
         plates_collection.insert_one(plate_data)
@@ -113,14 +113,13 @@ def process_sensors():
         if not data:
             return jsonify({"status": "error", "message": "Datos JSON requeridos"}), 400
 
-        # Validar campos obligatorios
-        #required_fields = ["gas1", "gas2", "gas3", "latitude", "longitude"]
-        #if not all(field in data for field in required_fields):
-        #    return jsonify({"status": "error", "message": "Faltan campos requeridos"}), 400
-
         # Guardar en MongoDB
         sensor_data = {
-            **data,
+            "CO": data.get("gas1", 0),  # MQ7
+            "CO2": data.get("gas2", 0),  # MQ2
+            "Calidad del aire": data.get("gas3", 0),  # MQ135
+            "distancia": round(data.get("distancia", 0.0), 2),
+            "id": data.get("id", 0),
             "timestamp": datetime.now()
         }
         sensors_collection.insert_one(sensor_data)

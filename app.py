@@ -130,7 +130,7 @@ def process_sensors():
         sensor_data = {
             "CO": data.get("gas1", 0),  # MQ7
             "CO2": data.get("gas2", 0),  # MQ2
-            "Smog": data.get("gas3", 0),  # MQ135
+            "Calidad del aire": data.get("gas3", 0),  # MQ135
             "distancia": round(data.get("distancia", 0.0), 2),
             "id": data.get("id", 0),
             "timestamp": datetime.now()
